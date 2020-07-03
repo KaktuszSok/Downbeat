@@ -1,0 +1,23 @@
+//Spaces indicate new arguments, to pass a string with a space in it as an argument use an underscore instead.
+
+//SKY ColourR,G,B,A - Sets base sky colour
+SKY 0,0,0,0
+
+//TILE ColourR,G,B,A TileVariant - Marks the pixel of a specific colour to represent a specific tile.
+TILE 128,128,128,255 Stone_Wall
+TILE 127,51,0,255 Dirt_Floor
+TILE 0,0,0,255 Invisible_Wall
+
+//ENTRANCE ColourR,G,B,A ID - Marks the pixel to represent an entrance. A level can have many entrances hence ID.
+ENTRANCE 255,216,0,255 0
+EXIT 255,216,0,255 Level0-0 1 //Make entrance lead back to where we came from
+TILE 255,216,0,255 Dirt_Floor
+
+//EXIT ColourR,G,B,A Level entranceID - Marks the pixel to represent an exit. LEVEL is the level to load, entranceID is the entrance ID to spawn at.
+EXIT 0,38,255,255 Level0-0 0
+ENTRANCE 0,38,255,255 1 //Make exit enter-able from where it leads to
+TILE 0,38,255,255 Dirt_Floor
+
+//ENTITY ColourR,G,B,A Name - Makes the pixel spawn an entity
+ENTITY 178,0,255,255 Test_Ball
+TILE 178,0,255,255 Dirt_Floor //To not leave a hole in the ground where the entity spawns
