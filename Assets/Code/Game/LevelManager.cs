@@ -13,6 +13,8 @@ public class LevelManager : MonoBehaviour
 
     //Debug
     public string LevelToLoad = "Level0-0";
+    public int bpm = 144;
+    public int ticksPerBeat = 4;
 
     private void Awake()
     {
@@ -22,8 +24,9 @@ public class LevelManager : MonoBehaviour
         EnterLevel(LevelToLoad, 0);
 
         BeatManager.Initialise();
+        BeatManager.bpm = bpm;
+        BeatManager.ticksPerBeat = ticksPerBeat;
         BeatManager.LoadSong();
-        BeatManager.bpm = 144;
     }
 
     private void Start()
@@ -41,10 +44,16 @@ public class LevelManager : MonoBehaviour
             if (Input.GetKey(KeyCode.LeftShift))
             {
                 LoadLevel(LevelToLoad, false);
+                BeatManager.bpm = bpm;
+                BeatManager.ticksPerBeat = ticksPerBeat;
+                BeatManager.LoadSong();
             }
             else
             {
                 LoadLevel(loadedLevel.name, true);
+                BeatManager.bpm = bpm;
+                BeatManager.ticksPerBeat = ticksPerBeat;
+                BeatManager.LoadSong();
             }
         }
     }
@@ -66,7 +75,7 @@ public class LevelManager : MonoBehaviour
         return action.Execute() ? ActionResult.SUCCESS : ActionResult.FAILED;
     }
 
-    public void OnNewTickWindow()
+    public void OnNewTickWindow(int tick)
     {
         playerTookActionThisTick = false;
     }

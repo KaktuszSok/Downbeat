@@ -28,14 +28,17 @@ public class EffectGUIFlash : MonoBehaviour
 
     IEnumerator FlashCoroutine(float time)
     {
-        float timer = 0;
-        while(timer <= time)
+        if (image)
         {
-            image.color = FlashGradient.Evaluate(timer / time);
+            float timer = 0;
+            while (timer <= time)
+            {
+                image.color = FlashGradient.Evaluate(timer / time);
 
-            timer += Time.deltaTime;
-            yield return null;
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            image.color = FlashGradient.Evaluate(1);
         }
-        image.color = FlashGradient.Evaluate(1);
     }
 }

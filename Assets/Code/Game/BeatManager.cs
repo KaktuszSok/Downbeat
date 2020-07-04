@@ -17,23 +17,23 @@ public static class BeatManager
     public static float ticksPerBeat = 2;
 
     //Runtime
-    static long musicSampleTicker;
+    static long musicSampleTicker; //mean error when tested ~-238 samples (falling behind) per resync (resyncs at around 60Hz as this is how often AudioSource updates elapsed time & samples)
     public static double musicTime { get { return (float)(musicSampleTicker * secondsPerSample) - offset; } }
     static long prevReportedMusicSample = 0;
-    static long totalTickerError = 0;
-    static long totalTickerResyncs = 0;
     static double prevBeatTime; //beat time previous frame
     static int prevTick;
-    static double nextTickWindowStart = 0f;
+    static int prevTickWindow;
 
     //Callbacks
     public delegate void TimingEventHandler();
     public static TimingEventHandler OnBeat; //Exactly in time with music
     public static TimingEventHandler OnTick; //Exactly in time with music
-    public static TimingEventHandler OnNewTickWindow; //Whenever inputs for next tick are available again (slightly before OnTick)
+    public delegate void WindowEventHandler(int currWindow);
+    public static WindowEventHandler OnNewTickWindow; //Whenever inputs for next tick are available again (slightly before OnTick)
 
     public delegate void TimingChangedHandler();
-    public static TimingChangedHandler OnTimingChanged;
+    public static TimingChangedHandler OnBPMChanged;
+    public static TimingChangedHandler OnTickrateChanged;
 
     public static void Initialise()
     {
@@ -50,45 +50,41 @@ public static class BeatManager
         musicSource = LevelManager.instance.GetComponent<AudioSource>();
         samplesPerSecond = musicSource.clip.frequency;
         secondsPerSample = 1.0d / samplesPerSecond;
+
+        OnBPMChanged?.Invoke();
+        OnTickrateChanged?.Invoke();
         musicSource.Play();
+
+        musicSampleTicker = 0;
+        prevReportedMusicSample = 0;
         prevBeatTime = 0f;
         prevTick = 0;
-        nextTickWindowStart = GetNextTickWindowTime(0);
+        prevTickWindow = 0;
     }
 
     //Called by LevelManager
     public static void Update()
     {
+        //DEBUG
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            OnTickrateChanged?.Invoke();
+        }
+
         if (musicSource.isPlaying)
         {
             if(musicSource.timeSamples > prevReportedMusicSample)
             {
-                /*DEBUG
-                long error = musicSampleTicker - musicSource.timeSamples;
-                totalTickerError += error;
-                totalTickerResyncs++;
-                if(totalTickerResyncs >= 1000)
-                {
-                    totalTickerError = 0; totalTickerResyncs = 0;
-                }
-                Debug.Log(musicSampleTicker + " vs. real " + musicSource.timeSamples + " (diff. " + error + " samples ), avg. is " + (totalTickerError/(double)totalTickerResyncs) + " over " + totalTickerResyncs + " resyncs");
-                if(error < 0)
-                {
-                    BeatDisplay.instance.AddInputMarker(LevelManager.ActionResult.IGNORED, (float)musicTime); //DEBUG
-                }
-                else
-                {
-                    BeatDisplay.instance.AddInputMarker(LevelManager.ActionResult.SUCCESS, (float)musicTime); //DEBUG
-                }*/
                 musicSampleTicker = prevReportedMusicSample = musicSource.timeSamples;
             }
             else
             {
-                musicSampleTicker += (int)(Time.deltaTime * samplesPerSecond);
+                musicSampleTicker += (int)(Time.deltaTime * musicSource.pitch * samplesPerSecond);
             }
 
             double beatTime = GetBeatTime();
             double tickTime = GetTickTime();
+            int currTickWindow = GetActiveTickWindow(musicTime);
 
             if (prevBeatTime < (int)beatTime) //New beat
             {
@@ -101,22 +97,24 @@ public static class BeatManager
                 prevTick = (int)(beatTime * ticksPerBeat);
             }
 
-            if (musicTime >= nextTickWindowStart)
+            if (currTickWindow > prevTickWindow)
             {
-                OnNewTickWindow.Invoke();
-                nextTickWindowStart = GetNextTickWindowTime(musicTime);
+                OnNewTickWindow.Invoke(currTickWindow);
+                prevTickWindow = currTickWindow;
             }
         }
     }
 
-    static void OnNewTickWindowStarted()
+    static void OnNewTickWindowStarted(int tick)
     {
 
     }
 
+
+    //WARNING - CLUSTERFUCK!!!
     //On-Beat windows last two "window lengths", Off-Beat windows last one. The middle of the window is when the tick actually happens.
     //Visually, the beats happen at the edges of the display bar (since the indicator bounces off) but the off-beats in the middle of their subdivision.
-    static double GetNextTickWindowTime(double time)
+    static int GetActiveTickWindow(double time)
     {
         //All time is measured in beats here, everything is adjusted to fit with the start of each window's timing rather than the actual beats and ticks.
         double windowLength = 1/(ticksPerBeat + 1); //window length as fraction of a beat = 1 / total windowlengths in a beat.
@@ -129,8 +127,7 @@ public static class BeatManager
             tick += (int)(beatFraction / windowLength) - 1; //the -1 accounts for the extra window length the on-beat takes up
         }
         //We now know which tick's window we are in.
-
-        return TicksToSeconds(tick) + BeatsToSeconds(tick%ticksPerBeat==0? windowLength : 0.5f*windowLength); //Return the tick's time (midpoint of window) plus half the tick's window length.
+        return tick;
     }
 
     public static double GetBeatTime()

@@ -12,39 +12,30 @@ public class BeatDisplay : MonoBehaviour
     [Tooltip("Ignored, Failed, Success.")]
     public GameObject[] InputMarkerPrefabs; //Index corresponds to ActionResult enum index. 
     public Transform BackgroundFull;
-    public EffectGUIFlash[] BackgroundSubdivisions;
-
-    int prevBeat = 0;
-    int prevBeatSubdivided = 0;
-    float subdivisionDenominator = 2f;
+    public GameObject BackgroundSubdivPrefab;
+    List<EffectGUIFlash> BackgroundSubdivisions = new List<EffectGUIFlash>();
 
     void Awake()
     {
         instance = this;
 
-        BackgroundSubdivisions = new EffectGUIFlash[BackgroundFull.childCount];
-        int i = 0;
+        BackgroundSubdivisions = new List<EffectGUIFlash>();
         foreach (Transform child in BackgroundFull)
         {
-            BackgroundSubdivisions[i] = child.GetComponent<EffectGUIFlash>();
-            i++;
+            BackgroundSubdivisions.Add(child.GetComponent<EffectGUIFlash>());
         }
+
+        BeatManager.OnTick += OnNewTick;
+        BeatManager.OnTickrateChanged += OnTickrateChanged;
     }
 
     private void Start()
     {
-        BeatManager.OnTick += OnNewTick;
         ClearInputMarkers();
     }
 
     void Update()
     {
-        //DEBUG
-        /*if(Input.GetKeyDown(KeyCode.X))
-        {
-            musicOffset = offset;
-        }*/
-
         float beat = (float)BeatManager.GetBeatTime();
         BeatSlider.value = Mathf.PingPong(beat, 1f);
     }
@@ -91,8 +82,8 @@ public class BeatDisplay : MonoBehaviour
     /// </summary>
     public void FlashBeatSubdivision(int subdivisionIndex)
     {
-        subdivisionIndex = (int)Mathf.PingPong(subdivisionIndex, BackgroundSubdivisions.Length-1);
-        BackgroundSubdivisions[subdivisionIndex].Flash((1f/BeatManager.ticksPerBeat) / (BeatManager.bpm / 60f)); //This time length ensures that subdivisons adjacent to the downbeats finish their animation before being activated again.
+        subdivisionIndex = (int)Mathf.PingPong(subdivisionIndex, BackgroundSubdivisions.Count-1);
+        BackgroundSubdivisions[subdivisionIndex].Flash(Mathf.Max(1f/BackgroundSubdivisions.Count, 0.25f) / (BeatManager.bpm / 60f));
     }
 
     /// <summary>
@@ -101,11 +92,40 @@ public class BeatDisplay : MonoBehaviour
     /// <remarks>Does not support fractional tickrates (yet?).</remarks> //TODO?
     public void SetSubdivisionsAmount(int ticksPerBeat)
     {
-        int amountOfSubdivsNeeded = (int)ticksPerBeat + 1;
+        int amountOfSubdivsNeeded = ticksPerBeat + 1;
+
+        while(BackgroundSubdivisions.Count > amountOfSubdivsNeeded)
+        {
+            Destroy(BackgroundSubdivisions[BackgroundSubdivisions.Count - 1].gameObject);
+            BackgroundSubdivisions.RemoveAt(BackgroundSubdivisions.Count - 1);
+        }
+        while(BackgroundSubdivisions.Count < amountOfSubdivsNeeded)
+        {
+            BackgroundSubdivisions.Add(Instantiate(BackgroundSubdivPrefab, BackgroundFull).GetComponent<EffectGUIFlash>());
+        }
+
+        //Assign sizes
+        int index = 0;
+        foreach (EffectGUIFlash subdivision in BackgroundSubdivisions)
+        {
+            float height = 25f;
+            if (index == 0 || index == BackgroundSubdivisions.Count - 1) height = 45f; //Beats are Phat
+            else if (index * 2 == BackgroundSubdivisions.Count - 1) height = 35f; //Off-Beat is HOT!
+
+            RectTransform rect = subdivision.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(rect.sizeDelta.x, height);
+
+            index++;
+        }
     }
 
     public void OnNewTick()
     {
         FlashBeatSubdivision((int)(BeatManager.GetTickTime()));
+    }
+
+    public void OnTickrateChanged()
+    {
+        SetSubdivisionsAmount((int)BeatManager.ticksPerBeat);
     }
 }
