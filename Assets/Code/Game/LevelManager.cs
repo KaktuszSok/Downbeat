@@ -9,6 +9,7 @@ public class LevelManager : MonoBehaviour
     public Level loadedLevel = null;
 
     public static PlayerEntity player;
+    public bool playerTookActionThisTick = false;
 
     //Debug
     public string LevelToLoad = "Level0-0";
@@ -19,10 +20,21 @@ public class LevelManager : MonoBehaviour
 
         //LoadLevel(LevelToLoad);
         EnterLevel(LevelToLoad, 0);
+
+        BeatManager.Initialise();
+        BeatManager.LoadSong();
+        BeatManager.bpm = 144;
+    }
+
+    private void Start()
+    {
+        BeatManager.OnNewTickWindow += OnNewTickWindow;
     }
 
     private void Update()
     {
+        BeatManager.Update();
+
         if (Input.GetKeyDown(KeyCode.R))
         {
             //Shift+R to load LevelToLoad, R alone to reload current level.
@@ -41,14 +53,22 @@ public class LevelManager : MonoBehaviour
 
     public enum ActionResult
     {
-        IGNORED,
-        FAILED,
-        SUCCESS
+        IGNORED, //Most likely blocked by timing
+        FAILED, //Most likely invalid circumstances
+        SUCCESS //All good
     }
 
     public ActionResult PlayerTakeAction(EntityAction action)
     {
+        if (playerTookActionThisTick) return ActionResult.IGNORED; //Already took an action this tick - ignore action request.
+
+        playerTookActionThisTick = true;
         return action.Execute() ? ActionResult.SUCCESS : ActionResult.FAILED;
+    }
+
+    public void OnNewTickWindow()
+    {
+        playerTookActionThisTick = false;
     }
 
     #endregion

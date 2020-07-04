@@ -34,29 +34,31 @@ public class Player : MonoBehaviour
         }
         if (playerEntity != null)
         {
-            if(Input.anyKeyDown)
+            if (Input.anyKeyDown)
             {
-                BeatDisplay.instance.AddInputMarker();
-            }
-            if (Input.GetKeyDown(walkForward))
-            {
-                bool movedSuccessfully = levelMgr.PlayerTakeAction(new ActionMove(playerEntity, playerEntity.pos + (IntVec)playerEntity.forward)).ToBool();
-                if(movedSuccessfully) walkSFX.PlayRandomSoundAtPosition((Vector3)playerEntity.pos, 1, 1);
-            }
-            if (Input.GetKeyDown(walkBack))
-            {
-                bool movedSuccessfully = levelMgr.PlayerTakeAction(new ActionMove(playerEntity, playerEntity.pos - (IntVec)playerEntity.forward)).ToBool();
-                if (movedSuccessfully) walkSFX.PlayRandomSoundAtPosition((Vector3)playerEntity.pos, 1, 0.7f);
-            }
-            if (Input.GetKeyDown(turnLeft))
-            {
-                playerEntity.forward = playerEntity.forward.Turn(-1);
-                turnSFX.PlayRandomSoundAtPosition(transform.position);
-            }
-            if (Input.GetKeyDown(turnRight))
-            {
-                playerEntity.forward = playerEntity.forward.Turn(1);
-                turnSFX.PlayRandomSoundAtPosition(transform.position);
+                LevelManager.ActionResult actionResult = LevelManager.ActionResult.FAILED;
+                if (Input.GetKeyDown(walkForward))
+                {
+                    actionResult = levelMgr.PlayerTakeAction(new ActionMove(playerEntity, playerEntity.pos + (IntVec)playerEntity.forward));
+                    if (actionResult.ToBool()) walkSFX.PlayRandomSoundAtPosition((Vector3)playerEntity.pos, 1, 1);
+                }
+                if (Input.GetKeyDown(walkBack))
+                {
+                    actionResult = levelMgr.PlayerTakeAction(new ActionMove(playerEntity, playerEntity.pos - (IntVec)playerEntity.forward));
+                    if (actionResult.ToBool()) walkSFX.PlayRandomSoundAtPosition((Vector3)playerEntity.pos, 1, 0.7f);
+                }
+                if (Input.GetKeyDown(turnLeft))
+                {
+                    actionResult = levelMgr.PlayerTakeAction(new ActionTurn(playerEntity, playerEntity.forward.Turn(-1)));
+                    if (actionResult.ToBool()) turnSFX.PlayRandomSoundAtPosition(transform.position);
+                }
+                if (Input.GetKeyDown(turnRight))
+                {
+                    actionResult = levelMgr.PlayerTakeAction(new ActionTurn(playerEntity, playerEntity.forward.Turn(1)));
+                    if (actionResult.ToBool()) turnSFX.PlayRandomSoundAtPosition(transform.position);
+                }
+
+                BeatDisplay.instance.AddInputMarker(actionResult);
             }
         }
     }

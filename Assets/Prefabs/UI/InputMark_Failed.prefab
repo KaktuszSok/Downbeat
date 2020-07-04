@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 526503710110452881}
   - component: {fileID: -725235282988494007}
   m_Layer: 5
-  m_Name: InputMark
+  m_Name: InputMark_Failed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 1, b: 0.10661483, a: 0.15686275}
+  m_Color: {r: 0.78, g: 0.78, b: 0.78, a: 0.15686275}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -88,8 +88,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colourOverLifetime:
     serializedVersion: 2
-    key0: {r: 0, g: 1, b: 0.105882354, a: 0.15686275}
-    key1: {r: 0, g: 1, b: 0.105882354, a: 0.15686275}
+    key0: {r: 0.78, g: 0.78, b: 0.78, a: 0.15686275}
+    key1: {r: 0.78, g: 0.78, b: 0.78, a: 0.15686275}
     key2: {r: 1, g: 1, b: 1, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}

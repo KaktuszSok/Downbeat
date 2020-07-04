@@ -29,7 +29,7 @@ public abstract class Tile<Variant, Renderer> : Tile where Variant : TileVariant
 {
     public override TileVariant variant
     {
-        get { return variant; }
+        get { return typedVariant; }
         set { typedVariant = (Variant)value; }
     }
     public Variant typedVariant { get; protected set; }
